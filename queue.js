@@ -6,14 +6,12 @@ class Queue {
   }
 
   enqueue(item) {
-    this.items[this.tailIndex] = item;
-    this.tailIndex++;
+    this.items[this.tailIndex++] = item;
   }
 
   dequeue() {
     const item = this.items[this.headIndex];
-    delete this.items[this.headIndex];
-    this.headIndex++;
+    delete this.items[this.headIndex++];
     return item;
   }
 
