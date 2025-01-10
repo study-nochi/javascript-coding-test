@@ -1,50 +1,81 @@
-// bandage : [기술의 시전 시간, 1초당 회복량, 추가 회복량] 1차원 정수 배열
-// health : 최대 체력을 의미하는 정수
-// attacks : 몬스터의 공격 시간과 피해량을 담은 2차원 정수 배열
-// - attacks[i]는 [공격 시간, 피해량] 
+import React, {useState, useEffect} from 'react';
 
-function solution(bandage, health, attacks) {
-    const maxHealth = health;
-    const lastAttack = attacks[attacks.length - 1]
-    const firstAttack = attacks[0]
-    
-    for(let i = 0; i < attacks.length; i++) {
-        const [time, demage] = attacks[i]
-        console.log("현재 체력:", health)
-        health -= demage;
-        console.log("demage", demage, health)
-        // 몬스터의 공격을 받고 캐릭터의 체력이 0 이하가 되어 죽는다면
-        if(health <= 0) return -1;
-        // 모든 공격이 끝난 직후 남은 체력을 return
-        if(i === attacks.length -1) return health
-        
-        
-        // 붕대감기 시전
-        const [nextTime, nextDemage] = attacks[i + 1]
-        const spacingTime = nextTime - time - 1
-        const successth = Math.floor(spacingTime / bandage[0])
-        if(successth === 0) {
-            health += bandage[1] * spacingTime 
-            console.log("붕대감기 실패", spacingTime, bandage[0], bandage[1] * spacingTime, health)
-        } else {
-            health += (bandage[1] * spacingTime) + (bandage[2] * successth)
-            console.log("붕대감기 성공", spacingTime, bandage[0], (bandage[1] * spacingTime) + (bandage[2] * successth), health)
-        }
-            
-        if(health > maxHealth) {
-            health = maxHealth
-        }
-    }
-}
+const USERS_URL = 'https://example.com/api/users';
 
-// - t초 동안 붕대를 감으면서 1초마다 x만큼의 체력을 회복
-// - t초 연속으로 붕대를 감는 데 성공한다면 y만큼의 체력을 추가로 회복
-// - 게임 캐릭터에는 최대 체력이 존재 => 현재 체력이 최대 체력보다 커지는 것은 불가능
+// count는 총 결과 수
+// 페이지 당 10개의 항목을 반환
+// 첫 번째 버튼 클릭 시, 처음 페이지
+// 두 번째 버튼 이전 페이지
+// if(현재 페이지 === 처음 페이지 || 데이터 로드 중) 버튼 비활성화
+// 세 번째 버튼 다음 페이지
+// 네 번째 버튼 데이터의 마지막 페이지
+// - 현재 페이지 === 마지막 페이지 || 데이터 로드 중 => 버튼 비활성화
+// 버튼 로드 중 모든 비활성화
+// 
 
-// - 기술을 쓰는 도중 몬스터에게 공격을 당하면 기술이 취소
-// - 공격을 당하는 순간에는 체력을 회복할 수 없음
-// 몬스터에게 공격당해 기술이 취소당하거나 기술이 끝나면 그 즉시 붕대 감기를 다시 사용하며, 
-// 연속 성공 시간이 0으로 초기화
+const getJson = async(res) => await res.json()
+const PAGE_SIZE = 10
 
+export default function Table () {
+  const [page, setPage] = useState(0)
+  const [data, setData] = useState(null)
+  const [isLoading, setIsLoading] = useState(false)
 
+  const totalPageCount = useMemo(() => data ? Math.ceil(data.count / PAGE_SIZE) : 0, data)
+  const disabledPrev = false;// useMemo(() => isLoading || page === 0, [isLoading, page,])
+  const disabledNext = false; // useMemo(() => isLoading || page === totalPageCount, [isLoading, page, totalPageCount])
 
+  const [text, setText] = useState()
+
+  const handleClick = useCallback((e) => {
+    setText(e)
+  }, [setPage])
+
+  const handleClickFirst = useCallback((e) => {
+    console.log(e)
+    setPage(0)
+  }, [setPage])
+
+  const handleClickPrev = useCallback(() => {
+    setPage((prev) => prev - 1)
+  }, [setPage])
+
+  useEffect(() => {
+    setIsLoading(true)
+    fetch(`${USERS_URL}?page=${4}`)
+      .then(async(res) => {
+        setData(getJson(res))
+      })
+      .catch((err) => {
+        // 에러처리?
+        console.log("err", err)
+      })
+      .finally(() => {
+        setIsLoading(false)
+      }) 
+  }, [page])
+
+  return (
+    <div>
+      <div>{text}</div>
+      <table className="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+          </tr>
+        </thead>
+        <tbody>
+        //  render elements in tbody
+        </tbody>
+      </table>
+      <section className="pagination">
+        <button className="first-page-btn" onClick={handleClick} disabled={disabledPrev}>first</button>
+        <button className="previous-page-btn" onClick={handleClick} disabled={disabledPrev}>previous</button>
+        <button className="next-page-btn" onClick={handleClick} disabled={disabledNext}>next</button>
+        <button className="last-page-btn" onClick={handleClick} disabled={disabledNext}>last</button>
+      </section>
+    </div>
+  );
+};
